@@ -165,6 +165,76 @@ void token::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
+void token::vest( name      to,
+                  asset     quantity,
+                  uint64_t  vest_seconds,
+                  string    memo )
+{
+    auto from = _self;
+    require_auth( from );
+    eosio_assert( from != to, "cannot vest to self" );
+    eosio_assert( is_account( to ), "to account does not exist");
+    auto sym = quantity.symbol.name();
+    stats statstable( _self, sym );
+    const auto& st = statstable.get( sym );
+
+    require_recipient( from );
+    require_recipient( to );
+
+    eosio_assert( quantity.is_valid(), "invalid quantity" );
+    eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
+    eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+    eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
+    eosio_assert( vest_seconds > 0, "must vest for positive time" );
+    eosio_assert( vest_seconds <= 10*365*24*60*60, "must vest for no longer than 10 years" );
+
+    sub_balance( from, quantity );
+    add_vested_balance(to, quantity, vest_seconds, from);
+    
+}
+
+void token::claimvest( uint64_t id,
+                         asset    quantity )
+{
+    eosio_assert( quantity.is_valid(), "invalid quantity" );
+    eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
+    
+    vests vestings( _self, _self );
+    auto vest = vestings.get(id, "vest not found");
+    auto reciever = vest.reciever;
+    require_auth( reciever );
+    eosio_assert( quantity.symbol == vest.vested_balance.symbol, "symbol precision mismatch" );
+    eosio_assert( vest.vested_balance.amount >= quantity.amount, "overdrawn balance" );
+    eosio_assert( now() >= vest.vested_until, "early claim");
+    
+    require_recipient( reciever );
+    require_recipient( _self );
+
+
+    // sub vested
+    if( vest.vested_balance.amount == quantity.amount ) {
+        vestings.erase( vest );
+    } else {
+      vestings.modify( vest, reciever, [&]( auto& a ) {
+          a.vested_balance -= quantity;
+      });
+   }
+
+    add_balance( reciever, quantity, _self );
+}
+
+
+void token::add_vested_balance( name owner, asset value, uint64_t vest_seconds, name ram_payer )
+{
+    vests vestings( _self, _self );
+    vestings.emplace(ram_payer, [&](auto& d) {
+          d.id         = vestings.available_primary_key();
+          d.vested_balance  = value;
+          d.reciever     = owner;
+          d.vested_until = now()+vest_seconds;
+        });
+}
+
 } /// namespace eosio
 
-EOSIO_DISPATCH( eosio::token, (create)(issue)(transfer)(open)(close)(retire) )
+EOSIO_DISPATCH( eosio::token, (create)(issue)(transfer)(open)(close)(retire)(vest)(claimvest) )

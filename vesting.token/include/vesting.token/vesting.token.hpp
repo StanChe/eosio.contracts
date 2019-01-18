@@ -38,6 +38,17 @@ namespace eosio {
                         string  memo );
 
          [[eosio::action]]
+         void vest( name         to,
+                    asset        quantity,
+                    uint64_t     vest_seconds,
+                    string       memo );
+
+         [[eosio::action]]
+         void claimvest( uint64_t id,
+                         asset    quantity );
+
+
+         [[eosio::action]]
          void open( name owner, const symbol& symbol, name ram_payer );
 
          [[eosio::action]]
@@ -72,11 +83,24 @@ namespace eosio {
             uint64_t primary_key()const { return supply.symbol.code().raw(); }
          };
 
+         struct [[eosio::table]] vest_record{
+             uint64_t   id;
+             asset      vested_balance;
+             name       reciever;
+             uint64_t   vested_until;
+             
+             uint64_t primary_key()const { return id; }
+
+         };
+
+         typedef eosio::multi_index< "vests"_n, vest_record > vests;
          typedef eosio::multi_index< "accounts"_n, account > accounts;
          typedef eosio::multi_index< "stat"_n, currency_stats > stats;
 
          void sub_balance( name owner, asset value );
          void add_balance( name owner, asset value, name ram_payer );
+         void add_vested_balance( name owner, asset value, uint64_t vest_seconds, name ram_payer );
+
    };
 
 } /// namespace eosio
