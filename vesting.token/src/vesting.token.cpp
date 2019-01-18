@@ -174,9 +174,9 @@ void token::vest( name      to,
     require_auth( from );
     eosio_assert( from != to, "cannot vest to self" );
     eosio_assert( is_account( to ), "to account does not exist");
-    auto sym = quantity.symbol.name();
-    stats statstable( _self, sym );
-    const auto& st = statstable.get( sym );
+    auto sym = quantity.symbol.code();
+    stats statstable( _self, sym.row() );
+    const auto& st = statstable.get( sym.row() );
 
     require_recipient( from );
     require_recipient( to );
@@ -203,6 +203,7 @@ void token::claimvest( uint64_t id,
     auto vest = vestings.get(id, "vest not found");
     auto reciever = vest.reciever;
     require_auth( reciever );
+    eosio_assert( is_account( reciever ), "reciever account does not exist");
     eosio_assert( quantity.symbol == vest.vested_balance.symbol, "symbol precision mismatch" );
     eosio_assert( vest.vested_balance.amount >= quantity.amount, "overdrawn balance" );
     eosio_assert( now() >= vest.vested_until, "early claim");
