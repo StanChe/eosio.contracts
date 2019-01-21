@@ -10,6 +10,9 @@ struct contracts {
    static std::vector<uint8_t> token_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../eosio.token/eosio.token.wasm"); }
    static std::string          token_wast() { return read_wast("${CMAKE_BINARY_DIR}/../eosio.token/eosio.token.wast"); }
    static std::vector<char>    token_abi() { return read_abi("${CMAKE_BINARY_DIR}/../eosio.token/eosio.token.abi"); }
+   static std::vector<uint8_t> vesting_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../vesting.token/vesting.token.wasm"); }
+   static std::string          vesting_wast() { return read_wast("${CMAKE_BINARY_DIR}/../vesting.token/vesting.token.wast"); }
+   static std::vector<char>    vesting_abi() { return read_abi("${CMAKE_BINARY_DIR}/../vesting.token/vesting.token.abi"); }
    static std::vector<uint8_t> msig_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../eosio.msig/eosio.msig.wasm"); }
    static std::string          msig_wast() { return read_wast("${CMAKE_BINARY_DIR}/../eosio.msig/eosio.msig.wast"); }
    static std::vector<char>    msig_abi() { return read_abi("${CMAKE_BINARY_DIR}/../eosio.msig/eosio.msig.abi"); }
