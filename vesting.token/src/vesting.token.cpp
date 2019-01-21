@@ -171,8 +171,8 @@ void token::vest( name      to,
                   string    memo )
 {
     auto from = _self;
-    require_auth( from );
     eosio_assert( from != to, "cannot vest to self" );
+    require_auth( from );
     eosio_assert( is_account( to ), "to account does not exist");
     auto sym = quantity.symbol.code();
     stats statstable( _self, sym.raw() );
@@ -193,46 +193,50 @@ void token::vest( name      to,
     
 }
 
-void token::claimvest( uint64_t id,
-                         asset    quantity )
+void token::claimvest(  uint64_t id,
+                        name     reciever,
+                        asset    quantity )
 {
+    require_auth( reciever );
     eosio_assert( quantity.is_valid(), "invalid quantity" );
     eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
     
-    vests vestings( _self, _self );
-    auto vest = vestings.get(id, "vest not found");
-    auto reciever = vest.reciever;
-    require_auth( reciever );
-    eosio_assert( is_account( reciever ), "reciever account does not exist");
+    vests vestings( _self, reciever.value );
+    auto it = vestings.find( id );
+    eosio_assert( it != vestings.end(), "vest not found" );
+    const auto& vest = *it;
+
+    eosio_assert( vest.reciever == reciever, "the recievers in tx and vest doesn't match" );
+    eosio_assert( is_account( reciever ), "reciever account does not exist" );
     eosio_assert( quantity.symbol == vest.vested_balance.symbol, "symbol precision mismatch" );
     eosio_assert( vest.vested_balance.amount >= quantity.amount, "overdrawn balance" );
-    eosio_assert( now() >= vest.vested_until, "early claim");
+    eosio_assert( now() >= vest.vested_until, "early claim" );
     
     require_recipient( reciever );
     require_recipient( _self );
-
+    
 
     // sub vested
     if( vest.vested_balance.amount == quantity.amount ) {
-        vestings.erase( vest );
+        vestings.erase( it );
     } else {
-      vestings.modify( vest, reciever, [&]( auto& a ) {
+      vestings.modify( it, reciever, [&]( auto& a ) {
           a.vested_balance -= quantity;
       });
    }
 
-    add_balance( reciever, quantity, _self );
+    add_balance( reciever, quantity, reciever );
 }
 
 
 void token::add_vested_balance( name owner, asset value, uint64_t vest_seconds, name ram_payer )
 {
-    vests vestings( _self, _self );
+    vests vestings( _self, owner.value );
     vestings.emplace(ram_payer, [&](auto& d) {
-          d.id         = vestings.available_primary_key();
+          d.id              = vestings.available_primary_key();
           d.vested_balance  = value;
-          d.reciever     = owner;
-          d.vested_until = now()+vest_seconds;
+          d.reciever        = owner;
+          d.vested_until    = now()+vest_seconds;
         });
 }
 
