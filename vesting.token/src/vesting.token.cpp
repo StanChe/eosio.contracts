@@ -175,8 +175,8 @@ void token::vest( name      to,
     eosio_assert( from != to, "cannot vest to self" );
     eosio_assert( is_account( to ), "to account does not exist");
     auto sym = quantity.symbol.code();
-    stats statstable( _self, sym.row() );
-    const auto& st = statstable.get( sym.row() );
+    stats statstable( _self, sym.raw() );
+    const auto& st = statstable.get( sym.raw() );
 
     require_recipient( from );
     require_recipient( to );

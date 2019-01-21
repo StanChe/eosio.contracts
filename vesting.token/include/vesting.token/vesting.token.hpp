@@ -45,6 +45,7 @@ namespace eosio {
 
          [[eosio::action]]
          void claimvest( uint64_t id,
+                         name     reciever,
                          asset    quantity );
 
 
