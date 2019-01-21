@@ -12,6 +12,15 @@ This repository contains examples of these privileged contracts that are useful 
 
 The following unprivileged contract(s) are also part of the system.
    * [eosio.token](https://github.com/eosio/eosio.contracts/tree/master/eosio.token)
+   * [vesting.token](https://github.com/stanche/eosio.contracts/tree/master/vesting.token)
+
+
+## Vesting token
+
+Vesting token contract extends the basic eosio.token with an option to vest tokens for some amount of time (from 1 second to aprox 10 years). For now `vest` action is allowed only to the contract itself (_self auth is requered to vest).
+
+When the vesting period ends the reciepent can `claimvest` to get his tokens. The `reciepient` param should be the same as the `to` param in `vest` action.
+
 
 Dependencies:
 * [eosio v1.4.x](https://github.com/EOSIO/eos/releases/tag/v1.4.6) to [v1.6.x](https://github.com/EOSIO/eos/releases/tag/v1.6.0)
