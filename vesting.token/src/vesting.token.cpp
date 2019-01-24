@@ -165,13 +165,13 @@ void token::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-void token::vest( name      to,
+void token::vest( name      from,
+                  name      to,
                   asset     quantity,
                   uint64_t  vest_seconds,
                   string    memo )
 {
-    auto from = _self;
-    eosio_assert( from != to, "cannot vest to self" );
+    eosio_assert( from == _self, "only contract owner can vest for now" );
     require_auth( from );
     eosio_assert( is_account( to ), "to account does not exist");
     auto sym = quantity.symbol.code();
@@ -194,38 +194,39 @@ void token::vest( name      to,
 }
 
 void token::claimvest(  uint64_t id,
-                        name     reciever,
+                        name     from,
+                        name     to,
                         asset    quantity )
 {
-    require_auth( reciever );
+    require_auth( from );
     eosio_assert( quantity.is_valid(), "invalid quantity" );
     eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
     
-    vests vestings( _self, reciever.value );
+    vests vestings( _self, from.value );
     auto it = vestings.find( id );
     eosio_assert( it != vestings.end(), "vest not found" );
     const auto& vest = *it;
 
-    eosio_assert( vest.reciever == reciever, "the recievers in tx and vest doesn't match" );
-    eosio_assert( is_account( reciever ), "reciever account does not exist" );
+    eosio_assert( vest.reciever == from, "the from account in tx and vest reciever doesn't match" );
+    eosio_assert( is_account( to ), "reciever account does not exist" );
     eosio_assert( quantity.symbol == vest.vested_balance.symbol, "symbol precision mismatch" );
     eosio_assert( vest.vested_balance.amount >= quantity.amount, "overdrawn balance" );
     eosio_assert( now() >= vest.vested_until, "early claim" );
     
-    require_recipient( reciever );
-    require_recipient( _self );
-    
+    require_recipient( from );
+    require_recipient( to );
 
     // sub vested
     if( vest.vested_balance.amount == quantity.amount ) {
         vestings.erase( it );
     } else {
-      vestings.modify( it, reciever, [&]( auto& a ) {
+      vestings.modify( it, from, [&]( auto& a ) {
           a.vested_balance -= quantity;
       });
    }
-
-    add_balance( reciever, quantity, reciever );
+   
+    auto payer = has_auth( to ) ? to : from;
+    add_balance( to, quantity, payer );
 }
 
 

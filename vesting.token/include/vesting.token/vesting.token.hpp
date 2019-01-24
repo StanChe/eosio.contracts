@@ -38,14 +38,16 @@ namespace eosio {
                         string  memo );
 
          [[eosio::action]]
-         void vest( name         to,
+         void vest( name         from,
+                    name         to,
                     asset        quantity,
                     uint64_t     vest_seconds,
                     string       memo );
 
          [[eosio::action]]
          void claimvest( uint64_t id,
-                         name     reciever,
+                         name     from,
+                         name     to,
                          asset    quantity );
 
 
