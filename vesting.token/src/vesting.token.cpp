@@ -196,11 +196,14 @@ void token::vest( name      from,
 void token::claimvest(  uint64_t id,
                         name     from,
                         name     to,
-                        asset    quantity )
+                        asset    quantity,
+                        string   memo )
 {
     require_auth( from );
     eosio_assert( quantity.is_valid(), "invalid quantity" );
     eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
+    eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
+
     
     vests vestings( _self, from.value );
     auto it = vestings.find( id );
